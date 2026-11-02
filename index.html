@@ -163,9 +163,15 @@ body:not(.has-user) #up { visibility:hidden; pointer-events:none; }
   <div class="auth-box">
     <h1>ลงชื่อเข้าเล่น</h1>
     <p>ใส่ชื่อที่ต้องการแสดง แล้วกดเข้าเล่นได้เลย</p>
-    <input type="text" id="loginName" placeholder="ชื่อของคุณ" maxlength="20" autocomplete="nickname">
+    <input type="text" id="loginName" placeholder="ชื่อของคุณ (เข้าเล่นแบบไม่ใช้อีเมล)" maxlength="20" autocomplete="nickname">
     <div class="auth-error" id="loginErr"></div>
-    <button class="btn" id="loginBtn" type="button">เข้าเล่น</button>
+    <button class="btn" id="loginBtn" type="button">เข้าเล่นด้วยชื่อ</button>
+    <div style="height:1px;background:var(--line);margin:16px 0"></div>
+    <p style="margin-bottom:8px">หรือใช้อีเมลและรหัสผ่าน</p>
+    <input type="email" id="loginEmail" placeholder="อีเมล" autocomplete="email" inputmode="email">
+    <input type="password" id="loginPassword" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)" autocomplete="current-password">
+    <button class="btn" id="emailSignInBtn" type="button">เข้าสู่ระบบด้วยอีเมล</button>
+    <button class="btn alt" id="emailSignUpBtn" type="button">สมัครบัญชีด้วยอีเมล</button>
     <button class="btn alt" id="googleBtn" type="button">เจ้าของเว็บไซต์: เข้าด้วย Google</button>
   </div>
 </div>
@@ -297,7 +303,7 @@ document.getElementById('gatePass').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('gateBtn').click();
 });
 
-// Firebase Authentication: สมาชิกใช้ชื่ออย่างเดียวผ่าน Anonymous Auth; เจ้าของใช้ Google Auth
+// Firebase Authentication: สมาชิกเลือกเข้าเล่นด้วยชื่อหรือบัญชีอีเมลได้; เจ้าของใช้ Google
 function safeName(name){ return name.replace(/[.#$\[\]\/]/g,'_').slice(0,20); }
 async function finishLogin(user,name){
   if(!user || !db) throw new Error('Firebase ยังเชื่อมต่อฐานข้อมูลไม่ได้');
@@ -305,46 +311,54 @@ async function finishLogin(user,name){
   const snap=await ref.once('value');
   let profile=snap.val();
   if(!profile){
-    profile={name:name||user.displayName||'ผู้เล่น',created:Date.now(),state:{score:0,unlocked:false,ticket:null}};
+    profile={name:safeName(name||user.displayName||'ผู้เล่น')||'ผู้เล่น',email:user.email||null,created:Date.now(),state:{score:0,unlocked:false,ticket:null}};
     await ref.set(profile);
-  } else if(name && profile.name!==name){
-    await ref.child('name').set(name);
-    profile.name=name;
+  } else {
+    const updates={};
+    const chosen=safeName(name||user.displayName||profile.name||'ผู้เล่น')||'ผู้เล่น';
+    if(chosen && profile.name!==chosen) updates.name=chosen;
+    if(user.email && profile.email!==user.email) updates.email=user.email;
+    if(Object.keys(updates).length) await ref.update(updates);
+    profile={...profile,...updates};
   }
-  enterGame({uid:user.uid,name:profile.name||name||user.displayName||'ผู้เล่น',role:profile.role||null,ticket:profile.ticket||null});
+  currentUser={uid:user.uid,name:profile.name||name||user.displayName||'ผู้เล่น',role:profile.role||null,ticket:profile.ticket||null,email:user.email||null};
   await loadCloudState();
+  enterGame(currentUser);
 }
-document.getElementById('loginBtn').onclick=async()=>{
-  const name=safeName(document.getElementById('loginName').value.trim());
+async function runAuthAction(buttonId,label,action){
   const err=document.getElementById('loginErr');
-  if(!name||name.length<2){err.textContent='กรุณาใส่ชื่ออย่างน้อย 2 ตัวอักษร';return;}
-  if(!auth||!db){err.textContent='Firebase ยังเชื่อมต่อไม่ได้';return;}
-  const btn=document.getElementById('loginBtn');btn.disabled=true;btn.textContent='กำลังเข้าเล่น...';err.textContent='';
-  try{
-    let user=auth.currentUser;
-    if(user && user.isAnonymous){ await finishLogin(user,name); }
-    else { const credential=await auth.signInAnonymously(); await finishLogin(credential.user,name); }
-  }catch(e){console.error('Anonymous login failed',e);err.textContent='เข้าเล่นไม่สำเร็จ: '+(e.message||e.code||'ตรวจสอบ Firebase Authentication และ Rules');}
-  finally{btn.disabled=false;btn.textContent='เข้าเล่น';}
+  const btn=document.getElementById(buttonId);
+  btn.disabled=true;const old=btn.textContent;btn.textContent='กำลังดำเนินการ...';err.textContent='';
+  try{const user=await action();await finishLogin(user,label);}
+  catch(e){console.error('Authentication failed',e);const code=e.code||'';const messages={
+    'auth/admin-restricted-operation':'Firebase ปฏิเสธวิธีเข้าสู่ระบบนี้ ให้ตรวจสอบ Sign-in method',
+    'auth/operation-not-allowed':'ยังไม่ได้เปิดวิธีเข้าสู่ระบบนี้ใน Firebase Authentication',
+    'auth/invalid-credential':'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+    'auth/email-already-in-use':'อีเมลนี้มีบัญชีแล้ว ให้กดเข้าสู่ระบบด้วยอีเมล',
+    'auth/weak-password':'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร',
+    'auth/invalid-email':'รูปแบบอีเมลไม่ถูกต้อง',
+    'PERMISSION_DENIED':'Firebase Rules ไม่อนุญาตให้อ่านหรือบันทึกข้อมูลผู้เล่น'
+  };err.textContent=(messages[code]||e.message||code||'เกิดข้อผิดพลาด');}
+  finally{btn.disabled=false;btn.textContent=old;}
+}
+document.getElementById('loginBtn').onclick=()=>{
+  const name=safeName(document.getElementById('loginName').value.trim());
+  if(!name||name.length<2){document.getElementById('loginErr').textContent='กรุณาใส่ชื่ออย่างน้อย 2 ตัวอักษร';return;}
+  if(!auth||!db){document.getElementById('loginErr').textContent='Firebase ยังเชื่อมต่อไม่ได้';return;}
+  runAuthAction('loginBtn',name,async()=>{if(auth.currentUser&&auth.currentUser.isAnonymous)return auth.currentUser;const cred=await auth.signInAnonymously();return cred.user;});
 };
 document.getElementById('loginName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+function emailInputs(){const email=document.getElementById('loginEmail').value.trim();const password=document.getElementById('loginPassword').value;if(!email||!password)throw new Error('กรุณากรอกอีเมลและรหัสผ่าน');return {email,password};}
+document.getElementById('emailSignInBtn').onclick=()=>runAuthAction('emailSignInBtn',null,async()=>{const {email,password}=emailInputs();const c=await auth.signInWithEmailAndPassword(email,password);return c.user;});
+document.getElementById('emailSignUpBtn').onclick=()=>runAuthAction('emailSignUpBtn',null,async()=>{const {email,password}=emailInputs();if(password.length<6)throw Object.assign(new Error('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'),{code:'auth/weak-password'});const c=await auth.createUserWithEmailAndPassword(email,password);return c.user;});
 let redirectedGoogleUser=null;
 document.getElementById('googleBtn').onclick=async()=>{
   const err=document.getElementById('loginErr');
-  try{
-    if(redirectedGoogleUser){await finishLogin(redirectedGoogleUser,redirectedGoogleUser.displayName);return;}
-    const provider=new firebase.auth.GoogleAuthProvider();
-    try{sessionStorage.setItem('gang_gate_passed','1');}catch(e){}
-    await auth.signInWithRedirect(provider);
-  }catch(e){console.error(e);err.textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');}
+  try{const provider=new firebase.auth.GoogleAuthProvider();await auth.signInWithRedirect(provider);}
+  catch(e){console.error(e);err.textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');}
 };
 auth.getRedirectResult().then(async result=>{
-  if(result.user){
-    redirectedGoogleUser=result.user;
-    try{
-      showLogin();await finishLogin(result.user,result.user.displayName||'เจ้าของเว็บไซต์');
-    }catch(e){console.error(e);showLogin();document.getElementById('loginErr').textContent='เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code||'ตรวจสอบ Firebase Rules');}
-  }
+  if(result.user){redirectedGoogleUser=result.user;try{await finishLogin(result.user,result.user.displayName||'เจ้าของเว็บไซต์');}catch(e){console.error(e);showLogin();document.getElementById('loginErr').textContent='เข้าสู่ระบบแล้ว แต่บันทึกโปรไฟล์ไม่สำเร็จ: '+(e.message||e.code||'');}}
 }).catch(e=>{console.error(e);showLogin();document.getElementById('loginErr').textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');});
 
 // รีเซ็ตเฉพาะสถานะกิจกรรม ไม่ลบบัญชี Authentication หรือโปรไฟล์ผู้เล่น
@@ -792,7 +806,7 @@ $('#closeHelp').onclick = closeHelpWithBack;
 help.addEventListener('click', e => { if (e.target === help) closeHelp(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if($('#scr').classList.contains('open')) closeScr(); else if(help.classList.contains('open')) closeHelpWithBack(); } });
 addEventListener('popstate',()=>{if($('#scr').classList.contains('open')){$('#scr').className='';document.body.style.overflow='';}if(help.classList.contains('open'))closeHelp();overlayHistory=false;});
-// Don't start game until logged in
+// Don't start game until authentication and profile sync both succeed
 showLogin();
 // original render etc will run after login via enterGame if needed
 // but keep for safety
