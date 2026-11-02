@@ -258,7 +258,7 @@ function enterGame(user) {
   document.getElementById('userBar').classList.add('show');
   document.body.classList.add('has-user');
   document.getElementById('userName').textContent = user.name;
-  if(user.name==='@@@'&&!document.getElementById('adminResetBtn')){const b=document.createElement('button');b.id='adminResetBtn';b.textContent='รีเซ็ตเว็บ';b.className='btn alt';b.style.margin='0 0 0 8px';b.onclick=adminReset;document.getElementById('userBar').appendChild(b);}
+  if(user.name==='ecsgrxf'&&!document.getElementById('adminResetBtn')){const b=document.createElement('button');b.id='adminResetBtn';b.textContent='รีเซ็ตเว็บ';b.className='btn alt';b.style.margin='0 0 0 8px';b.onclick=adminReset;document.getElementById('userBar').appendChild(b);}
   updateUserRoleDisplay();
   // start listening claims
   if (db) listenClaims();
@@ -320,8 +320,8 @@ auth.getRedirectResult().then(result=>{if(result.user)redirectedGoogleUser=resul
 
 // รีเซ็ตเฉพาะสถานะกิจกรรม ไม่ลบบัญชี Authentication หรือโปรไฟล์ผู้เล่น
 async function adminReset(){
- if(!currentUser||currentUser.name!=='@@@'){alert('ไม่มีสิทธิ์ผู้ดูแล');return;}
- const code=prompt('รหัสผู้ดูแล');if(code!=='123'){alert('รหัสไม่ถูกต้อง');return;}
+ if(!currentUser||currentUser.name!=='ecsgrxf'){alert('ไม่มีสิทธิ์ผู้ดูแล');return;}
+ const code=prompt('รหัสผู้ดูแล');if(code!=='HYRK44RREIWIS438933H5RY'){alert('รหัสไม่ถูกต้อง');return;}
  if(!confirm('ยืนยันรีเซ็ตสถานะกิจกรรมทั้งหมด? บัญชีสมาชิกจะไม่ถูกลบ'))return;
  try{await db.ref('claims').update({spy:null,hunter:null,joker:null});const snap=await db.ref('players').once('value');const all=snap.val()||{};for(const uid of Object.keys(all)){await db.ref('players/'+uid).update({state:{score:0,unlocked:false,ticket:null},role:null,ticket:null});}
  S={score:0,unlocked:false,ticket:null};save();lock=false;stopAll();document.documentElement.classList.remove('glitch','spyfx');$('#ticketBox').hidden=true;$('#dec').style.display='none';setMsg('','');render();alert('รีเซ็ตสถานะกิจกรรมแล้ว บัญชีสมาชิกยังอยู่ครบ');
