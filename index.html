@@ -62,7 +62,9 @@ button:focus-visible,a:focus-visible,label:focus-within{outline:3px solid var(--
 #tap,#bonus{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
 #green{display:block;margin:70px auto 0;width:84px;height:84px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 35% 30%,#8dffa6,#1fa84f 60%,#0d6a2e);box-shadow:0 0 26px #1fa84f88;touch-action:manipulation}
 #toast{position:fixed;left:50%;top:42%;transform:translateX(-50%);z-index:60;background:#0d6a2e;color:#fff;font-weight:600;padding:14px 22px;border-radius:12px;display:none;text-align:center;max-width:86vw}
-#scr{position:fixed;inset:0;z-index:100;display:none;padding:34px 24px;overflow:auto;-webkit-overflow-scrolling:touch}
+#scr{position:fixed;inset:0;z-index:100;display:none;padding:76px 24px 34px;overflow:auto;-webkit-overflow-scrolling:touch}
+#scrBack{position:fixed;top:12px;left:12px;z-index:105;border:2px solid currentColor;border-radius:12px;padding:9px 16px;background:#17100ddd;color:inherit;font:600 16px 'Kanit',sans-serif;cursor:pointer;box-shadow:0 3px 14px #0008}
+#helpBack{position:sticky;top:0;z-index:5;display:block;margin:-8px 0 14px auto;border:1px solid #d9a45b;border-radius:10px;padding:7px 14px;background:#17100d;color:#fff1d6;font:600 15px 'Kanit',sans-serif}
 #scr.open{display:block}
 #scr.black{background:#000 url('https://i.postimg.cc/GmYybL0g/file-00000000cfdc8207b36ebf408b99f838.png') center/cover no-repeat;color:#ff2b2b}
 #scr.white{background:#1a1205 url('https://i.postimg.cc/HLdVHb98/file-00000000895482118dfaac16dd91b073.png') center/cover no-repeat;color:#ffd24a}
@@ -177,9 +179,10 @@ body:not(.has-user) #up { visibility:hidden; pointer-events:none; }
 <div id="up"><button id="green" type="button" aria-label=""></button><div style="height:10000px" aria-hidden="true"></div></div>
 <div id="toast" role="status"></div>
 <div id="edge"></div>
-<div id="scr"><pre id="scrText"></pre><a id="scrDl" class="btn sbtn" href="#" download="ticket.png" style="display:none">ดาวน์โหลดรูปภาพบัตร</a></div>
+<div id="scr"><button id="scrBack" type="button">← กลับหน้าก่อน</button><pre id="scrText"></pre><a id="scrDl" class="btn sbtn" href="#" download="ticket.png" style="display:none">ดาวน์โหลดรูปภาพบัตร</a></div>
 <div id="help">
   <div class="in">
+    <button id="helpBack" type="button">← กลับหน้าก่อน</button>
     <h2>วิธีทำให้ปุ่มกดได้ทีละ 100</h2>
     <ol class="steps">
       <li>เลื่อนไปที่รูปภาพเหนือกล่องวางไฟล์ แล้วกดค้างที่รูป เลือกดาวน์โหลดรูปลงเครื่อง</li>
@@ -253,12 +256,13 @@ function showLogin() {
 }
 function enterGame(user) {
   currentUser = user;
+  try { sessionStorage.removeItem('gang_gate_passed'); } catch(e) {}
   document.getElementById('authGate').classList.add('hidden');
   document.getElementById('authLogin').classList.add('hidden');
   document.getElementById('userBar').classList.add('show');
   document.body.classList.add('has-user');
   document.getElementById('userName').textContent = user.name;
-  if(user.name==='ecsgrxf'&&!document.getElementById('adminResetBtn')){const b=document.createElement('button');b.id='adminResetBtn';b.textContent='รีเซ็ตเว็บ';b.className='btn alt';b.style.margin='0 0 0 8px';b.onclick=adminReset;document.getElementById('userBar').appendChild(b);}
+  if(user.uid==='sEUry3SkB1a0NAhOwk4PpCSymZe2'&&!document.getElementById('adminResetBtn')){const b=document.createElement('button');b.id='adminResetBtn';b.textContent='รีเซ็ตเว็บ';b.className='btn alt';b.style.margin='0 0 0 8px';b.onclick=adminReset;document.getElementById('userBar').appendChild(b);}
   updateUserRoleDisplay();
   // start listening claims
   if (db) listenClaims();
@@ -284,6 +288,7 @@ document.getElementById('gateBtn').onclick = () => {
   const p = document.getElementById('gatePass').value.trim();
   if (p === '@หมูปิ้ง_404') {
     document.getElementById('gateErr').textContent = '';
+    try { sessionStorage.setItem('gang_gate_passed', '1'); } catch(e) {}
     showLogin();
   } else {
     document.getElementById('gateErr').textContent = 'รหัสผ่านไม่ถูกต้อง';
@@ -314,13 +319,13 @@ document.getElementById('loginBtn').onclick=async()=>{
 };
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
 let redirectedGoogleUser=null;
-document.getElementById('googleBtn').onclick=async()=>{const err=document.getElementById('loginErr');try{if(redirectedGoogleUser){await finishLogin(redirectedGoogleUser,redirectedGoogleUser.displayName);return;}const provider=new firebase.auth.GoogleAuthProvider();await auth.signInWithRedirect(provider);}catch(e){err.textContent='Google Login ไม่สำเร็จ';}};
-auth.getRedirectResult().then(result=>{if(result.user)redirectedGoogleUser=result.user;}).catch(e=>console.error(e));
+document.getElementById('googleBtn').onclick=async()=>{const err=document.getElementById('loginErr');try{if(redirectedGoogleUser){await finishLogin(redirectedGoogleUser,redirectedGoogleUser.displayName);return;}const provider=new firebase.auth.GoogleAuthProvider();try{sessionStorage.setItem('gang_gate_passed','1');}catch(e){}await auth.signInWithRedirect(provider);}catch(e){err.textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');}};
+auth.getRedirectResult().then(async result=>{if(result.user){redirectedGoogleUser=result.user;try{if(sessionStorage.getItem('gang_gate_passed')==='1'){showLogin();await finishLogin(result.user,result.user.displayName);}}catch(e){showLogin();document.getElementById('loginErr').textContent='เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code||'ตรวจสอบ Firebase Rules');}}}).catch(e=>{console.error(e);showLogin();document.getElementById('loginErr').textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');});
 
 
 // รีเซ็ตเฉพาะสถานะกิจกรรม ไม่ลบบัญชี Authentication หรือโปรไฟล์ผู้เล่น
 async function adminReset(){
- if(!currentUser||currentUser.name!=='ecsgrxf'){alert('ไม่มีสิทธิ์ผู้ดูแล');return;}
+ if(!currentUser||currentUser.uid!=='sEUry3SkB1a0NAhOwk4PpCSymZe2'){alert('ไม่มีสิทธิ์เจ้าของเว็บไซต์');return;}
  const code=prompt('รหัสผู้ดูแล');if(code!=='HYRK44RREIWIS438933H5RY'){alert('รหัสไม่ถูกต้อง');return;}
  if(!confirm('ยืนยันรีเซ็ตสถานะกิจกรรมทั้งหมด? บัญชีสมาชิกจะไม่ถูกลบ'))return;
  try{await db.ref('claims').update({spy:null,hunter:null,joker:null});const snap=await db.ref('players').once('value');const all=snap.val()||{};for(const uid of Object.keys(all)){await db.ref('players/'+uid).update({state:{score:0,unlocked:false,ticket:null},role:null,ticket:null});}
@@ -693,6 +698,7 @@ const HUNT_TEXT = 'คุณได้รับสิทธิ์พิเศษ 
 let typing = 0, typed = false, fullText = '';
 function finish(){ clearInterval(typing); typed = true; $('#scrDl').style.display = 'inline-block'; $('#scr').scrollTop = $('#scr').scrollHeight; }
 function openScr(kind){
+  pushOverlayHistory();
   const el = $('#scr'), tx = $('#scrText');
   fullText = kind === 'spy' ? SPY_TEXT : kind === 'hunter' ? HUNT_TEXT : JOKER_TEXT;
   playOnly(kind === 'spy' ? 'spy' : kind === 'hunter' ? 'hunt' : 'joker');
@@ -706,9 +712,22 @@ function openScr(kind){
     if (i >= fullText.length) finish();
   }, 32);
 }
-$('#scr').addEventListener('click', () => {
-  if (!typed){ $('#scrText').textContent = fullText; finish(); return; }
-  $('#scr').className = ''; document.body.style.overflow = '';
+let overlayHistory = false;
+function closeScr(){
+  clearInterval(typing);
+  $('#scr').className = '';
+  document.body.style.overflow = '';
+  if(overlayHistory){overlayHistory=false;if(history.state&&history.state.gangOverlay)history.back();}
+}
+function closeHelpWithBack(){closeHelp();if(overlayHistory){overlayHistory=false;if(history.state&&history.state.gangOverlay)history.back();}}
+function pushOverlayHistory(){if(!overlayHistory){history.pushState({gangOverlay:true},'','#overlay');overlayHistory=true;}}
+$('#scrBack').addEventListener('click',closeScr);
+$('#helpBack').addEventListener('click',closeHelpWithBack);
+$('#scr').addEventListener('click', e => {
+  if(e.target===$('#scr')){
+    if (!typed){ $('#scrText').textContent = fullText; finish(); return; }
+    closeScr();
+  }
 });
 $('#dl').addEventListener('click', e => {
   const t = S.ticket;
@@ -730,6 +749,7 @@ $('#green').addEventListener('click', async () => {
 });
 const help = $('#help'), closeHelp = () => help.classList.remove('open');
 $('#menuBtn').onclick = async () => {
+  pushOverlayHistory();
   if (S.hunter) return;
   if (claims.spy && claims.spy !== currentUser?.uid) {
     alert('สิทธิ์สายลับถูกจองแล้ว');
@@ -744,11 +764,12 @@ $('#menuBtn').onclick = async () => {
   if (AUD.manual.paused) playOnly('manual');
   help.classList.add('open');
 };
-$('#closeHelp').onclick = closeHelp;
+$('#closeHelp').onclick = closeHelpWithBack;
 help.addEventListener('click', e => { if (e.target === help) closeHelp(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if($('#scr').classList.contains('open')) closeScr(); else if(help.classList.contains('open')) closeHelpWithBack(); } });
+addEventListener('popstate',()=>{if($('#scr').classList.contains('open')){$('#scr').className='';document.body.style.overflow='';}if(help.classList.contains('open'))closeHelp();overlayHistory=false;});
 // Don't start game until logged in
-showGate();
+try { if (sessionStorage.getItem('gang_gate_passed') === '1') showLogin(); else showGate(); } catch(e) { showGate(); }
 // original render etc will run after login via enterGame if needed
 // but keep for safety
 try{ history.scrollRestoration = 'manual'; }catch(e){}
