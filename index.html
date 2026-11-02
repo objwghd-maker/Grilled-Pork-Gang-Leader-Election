@@ -342,8 +342,7 @@ auth.getRedirectResult().then(async result=>{
   if(result.user){
     redirectedGoogleUser=result.user;
     try{
-      const gatePassed=sessionStorage.getItem('gang_gate_passed')==='1';
-      if(gatePassed){showLogin();await finishLogin(result.user,result.user.displayName||'เจ้าของเว็บไซต์');}
+      showLogin();await finishLogin(result.user,result.user.displayName||'เจ้าของเว็บไซต์');
     }catch(e){console.error(e);showLogin();document.getElementById('loginErr').textContent='เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code||'ตรวจสอบ Firebase Rules');}
   }
 }).catch(e=>{console.error(e);showLogin();document.getElementById('loginErr').textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');});
@@ -794,7 +793,7 @@ help.addEventListener('click', e => { if (e.target === help) closeHelp(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if($('#scr').classList.contains('open')) closeScr(); else if(help.classList.contains('open')) closeHelpWithBack(); } });
 addEventListener('popstate',()=>{if($('#scr').classList.contains('open')){$('#scr').className='';document.body.style.overflow='';}if(help.classList.contains('open'))closeHelp();overlayHistory=false;});
 // Don't start game until logged in
-try { if (sessionStorage.getItem('gang_gate_passed') === '1') showLogin(); else showGate(); } catch(e) { showGate(); }
+showLogin();
 // original render etc will run after login via enterGame if needed
 // but keep for safety
 try{ history.scrollRestoration = 'manual'; }catch(e){}
