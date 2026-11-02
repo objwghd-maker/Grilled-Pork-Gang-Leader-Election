@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>กิจกรรมแบบทดสอบคัดเลือกหัวหน้าแก๊งหมูปิ้ง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --coal:#1b110c; --smoke:#2c1d15; --line:#4d3123; --cream:#fff1d6; --mute:#cdae8e;
+  --ember:#ff5a1f; --wood:#d9a45b; --ok:#7bd88f; --bad:#ff8a7a;
+  color-scheme:dark; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:auto}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:radial-gradient(120% 60% at 50% 0,#3a1b0e 0,var(--coal) 60%) fixed var(--coal);
+  color:var(--cream);font:400 17px/1.7 'Kanit',system-ui,sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:640px;margin:0 auto;padding:28px 18px 80px}
+h1{font-weight:800;font-size:clamp(28px,8vw,44px);line-height:1.2;margin:8px 0 14px;text-wrap:balance}
+h2{font-weight:600;font-size:24px;line-height:1.3;margin:0 0 10px}
+p{margin:0 0 12px}
+a{color:var(--wood)}
+.mission{background:var(--smoke);border:2px dashed var(--wood);border-radius:14px;padding:14px 16px;margin:0 0 26px}
+.mission b{color:var(--ember);font-weight:800}
+
+/* ส่วนนับคะแนน */
+.score{text-align:center}
+.num{font-weight:800;font-size:clamp(60px,20vw,96px);line-height:1;font-variant-numeric:tabular-nums}
+.sub{color:var(--mute);margin:4px 0 12px}
+.track{height:16px;border-radius:99px;background:var(--smoke);border:1px solid var(--line);overflow:hidden}
+#bar{height:100%;width:0;background:linear-gradient(90deg,var(--wood),var(--ember));transition:width .1s}
+.stage{position:relative;display:grid;place-items:center;padding:30px 0 10px}
+#tap{width:min(64vw,240px);aspect-ratio:1;border-radius:50%;border:0;cursor:pointer;color:#fff;
+  font:800 22px 'Kanit',sans-serif;background:radial-gradient(circle at 35% 30%,#ffa15a,var(--ember) 55%,#b32d05);
+  box-shadow:0 0 0 8px #3d1d0e,0 0 40px #ff5a1f66,inset 0 -10px 24px #0004;touch-action:manipulation;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:transform .08s}
+#tap .e{font-size:68px;line-height:1}
+#tap:active{transform:scale(.94)}
+.pop{position:absolute;font-weight:800;font-size:28px;color:var(--wood);pointer-events:none;animation:up .8s ease-out forwards}
+@keyframes up{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-90px)}}
+button:focus-visible,a:focus-visible,label:focus-within{outline:3px solid var(--wood);outline-offset:3px}
+
+/* บัตร */
+#ticketBox{margin-top:36px;text-align:center}
+#ticketImg{width:min(100%,360px);height:auto;filter:drop-shadow(0 18px 30px #000a)}
+.btn{display:inline-block;border:0;border-radius:12px;padding:12px 22px;font:600 18px 'Kanit',sans-serif;
+  background:var(--wood);color:#2a1608;text-decoration:none;cursor:pointer;margin-top:14px}
+.btn.alt{background:transparent;color:var(--mute);border:1px solid var(--line);font-size:15px;padding:8px 14px}
+
+/* ส่วนพิเศษด้านล่าง */
+.gap{height:1000px}
+.special{padding-bottom:40px}
+.steps{margin:18px 0;padding-left:1.3em}
+.steps li{margin-bottom:10px}
+.note{background:var(--smoke);border-left:4px solid var(--wood);padding:10px 14px;border-radius:0 10px 10px 0;color:var(--mute);margin:14px 0}
+#ref{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);margin:12px 0 8px;background:var(--smoke);min-height:120px}
+#drop{display:inline-block;border:1px dashed var(--wood);border-radius:6px;padding:4px 8px;font-size:11px;line-height:1.3;cursor:pointer;background:var(--smoke);margin-top:12px}
+#menuBtn{display:flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:12px;border:2px solid var(--wood);background:var(--smoke);cursor:pointer;margin:0 auto;font-size:28px;color:var(--wood);line-height:1}
+#tap,#bonus{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+#green{display:block;margin:70px auto 0;width:84px;height:84px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 35% 30%,#8dffa6,#1fa84f 60%,#0d6a2e);box-shadow:0 0 26px #1fa84f88;touch-action:manipulation}
+#toast{position:fixed;left:50%;top:42%;transform:translateX(-50%);z-index:60;background:#0d6a2e;color:#fff;font-weight:600;padding:14px 22px;border-radius:12px;display:none;text-align:center;max-width:86vw}
+#scr{position:fixed;inset:0;z-index:100;display:none;padding:34px 24px;overflow:auto;-webkit-overflow-scrolling:touch}
+#scr.open{display:block}
+#scr.black{background:#000 url('https://i.postimg.cc/GmYybL0g/file-00000000cfdc8207b36ebf408b99f838.png') center/cover no-repeat;color:#ff2b2b}
+#scr.white{background:#1a1205 url('https://i.postimg.cc/HLdVHb98/file-00000000895482118dfaac16dd91b073.png') center/cover no-repeat;color:#ffd24a}
+#scrText{text-shadow:0 0 6px #000,0 2px 5px #000;margin:0;white-space:pre-wrap;word-break:break-word;font:400 19px/1.9 'Kanit',monospace}
+#scrText::after{content:'▌';animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+#scr .sbtn{margin:26px 0 50px;font-size:19px}
+#scr.black .sbtn{background:#c40000;color:#fff}
+#scr.white .sbtn{background:#ffd24a;color:#2a1608}
+#edge{position:fixed;inset:0;z-index:90;pointer-events:none;display:none}
+.spyfx #edge{display:block;animation:edge .18s infinite alternate}
+@keyframes edge{from{box-shadow:inset 0 0 0 6px #e00,inset 0 0 30px 8px #f00b}to{box-shadow:inset 0 0 0 12px #f22,inset 0 0 60px 18px #f00}}
+@keyframes shk{0%{transform:translate(2px,1px)}25%{transform:translate(-3px,2px)}50%{transform:translate(2px,-3px)}75%{transform:translate(-2px,-1px)}100%{transform:translate(3px,2px)}}
+@keyframes wig{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spyfx main{animation:shk .14s infinite}
+.glitch main{animation:shk .12s infinite}
+.glitch main h1{animation:spin 5s linear infinite}
+.glitch .mission{animation:wig .25s infinite alternate}
+.glitch .score{animation:wig .3s infinite alternate-reverse}
+.glitch #stage{animation:wig .2s infinite alternate}
+.glitch #ticketBox,.glitch .special{animation:spin 8s linear infinite reverse}
+#scr.joker{background:#000 url('https://i.postimg.cc/P53Jh5TD/file-00000000c8f48211b064ea41e4c2d7df.png') center/cover no-repeat;color:#39ff6a}
+#scr.joker .sbtn{background:#39ff6a;color:#06210f}
+#help{position:fixed;inset:0;z-index:110;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.78);padding:16px}
+#help.open{display:flex !important}
+#help .in{background:#2c1d15;color:#fff1d6;border:3px solid #d9a45b;border-radius:16px;width:min(100%,520px);max-height:85vh;overflow:auto;padding:20px 20px 24px;box-shadow:0 0 50px #000,0 0 0 2px #d9a45b}
+#help .steps li{margin-bottom:10px}
+#help h2{color:#ffb066;margin-top:0}
+.secret{background:var(--smoke);border:2px solid var(--ember);border-radius:12px;padding:12px 14px;text-align:left;margin:12px 0}
+#custom{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+#custom button{border:1px solid var(--line);background:var(--smoke);color:var(--cream);border-radius:8px;padding:6px 10px;font:400 14px 'Kanit',sans-serif;cursor:pointer}
+#custom .sw{width:30px;height:30px;padding:0;border-radius:50%;border:2px solid var(--cream)}
+#drop.over{background:#4a2a18;border-color:var(--ember)}
+#drop input{position:absolute;opacity:0;width:1px;height:1px}
+#msg{margin-top:12px;font-weight:600;min-height:1.7em}
+#msg.ok{color:var(--ok)} #msg.bad{color:var(--bad)}
+#dec{display:none;width:120px;border-radius:8px;border:1px solid var(--line);margin-top:10px}
+footer{margin-top:50px;text-align:center}
+@media (prefers-reduced-motion:reduce){.pop{animation:none;opacity:0}#bar{transition:none}}
+
+/* ===== AUTH SYSTEM ===== */
+#authGate, #authLogin {
+  position:fixed; inset:0; z-index:200; background:var(--coal);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px; text-align:center;
+}
+#authGate.hidden, #authLogin.hidden { display:none !important; }
+#authGate h1, #authLogin h1 { font-size:28px; margin-bottom:8px; }
+#authGate p, #authLogin p { color:var(--mute); margin-bottom:20px; }
+.auth-box {
+  background:var(--smoke); border:2px solid var(--wood); border-radius:16px;
+  padding:24px 20px; width:min(100%,380px);
+}
+.auth-box input {
+  width:100%; padding:12px 14px; margin:8px 0 14px;
+  border:1px solid var(--line); border-radius:10px;
+  background:#1b110c; color:var(--cream); font:400 17px 'Kanit',sans-serif;
+}
+.auth-box input:focus { outline:2px solid var(--wood); }
+.auth-box .btn { width:100%; margin-top:6px; }
+.auth-error { color:var(--bad); font-size:15px; min-height:1.4em; margin:6px 0; }
+#userBar {
+  position:fixed; top:0; left:0; right:0; z-index:40;
+  background:rgba(27,17,12,.92); border-bottom:1px solid var(--line);
+  padding:8px 14px; font-size:14px; display:none; align-items:center; justify-content:space-between;
+  backdrop-filter:blur(8px);
+}
+#userBar.show { display:flex; }
+#userBar b { color:var(--wood); }
+#userBar .role { color:var(--ember); font-weight:600; }
+body.has-user { padding-top:46px; }
+body:not(.has-user) main,
+body:not(.has-user) #up { visibility:hidden; pointer-events:none; }
+
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+
+</head>
+<body>
+
+<div id="authGate">
+  <div class="auth-box">
+    <h1>🔒 เข้าสู่กิจกรรม</h1>
+    <p>ใส่รหัสผ่านของแก๊ง</p>
+    <input type="password" id="gatePass" placeholder="รหัสผ่าน..." autocomplete="off">
+    <div class="auth-error" id="gateErr"></div>
+    <button class="btn" id="gateBtn" type="button">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<div id="authLogin" class="hidden">
+  <div class="auth-box">
+    <h1>ลงชื่อเข้าเล่น</h1>
+    <p>สมัครครั้งแรก หรือเข้าด้วยชื่อเดิม</p>
+    <input type="text" id="loginName" placeholder="ชื่อของคุณ" maxlength="20" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="รหัสผ่านของคุณ" autocomplete="current-password">
+    <div class="auth-error" id="loginErr"></div>
+    <button class="btn" id="loginBtn" type="button">เข้าเล่น / สมัคร</button>
+    <button class="btn alt" id="googleBtn" type="button">เข้าสู่ระบบด้วย Google</button>
+  </div>
+</div>
+
+<div id="userBar">
+  <span>ผู้เล่น: <b id="userName">-</b></span>
+  <span class="role" id="userRole">-</span>
+</div>
+
+<div id="up"><button id="green" type="button" aria-label=""></button><div style="height:10000px" aria-hidden="true"></div></div>
+<div id="toast" role="status"></div>
+<div id="edge"></div>
+<div id="scr"><pre id="scrText"></pre><a id="scrDl" class="btn sbtn" href="#" download="ticket.png" style="display:none">ดาวน์โหลดรูปภาพบัตร</a></div>
+<div id="help">
+  <div class="in">
+    <h2>วิธีทำให้ปุ่มกดได้ทีละ 100</h2>
+    <ol class="steps">
+      <li>เลื่อนไปที่รูปภาพเหนือกล่องวางไฟล์ แล้วกดค้างที่รูป เลือกดาวน์โหลดรูปลงเครื่อง</li>
+      <li>เปิดเว็บแปลงรูปเป็นรหัส <a href="https://base64.guru/converter/encode/image?hl=th-TH" target="_blank" rel="noopener">base64.guru/converter/encode/image</a></li>
+      <li>เลือกไฟล์รูปที่เพิ่งดาวน์โหลด ต้องเป็นรูปเดิม ห้ามครอบตัด ห้ามย่อขนาด ห้ามแก้สี</li>
+      <li>กดแปลง รอจนได้รหัสยาวๆ ออกมา</li>
+      <li>ดาวน์โหลดผลลัพธ์เป็นไฟล์ข้อความ (.txt) ถ้ามีแค่ปุ่มคัดลอก ให้คัดลอกไปวางในแอปโน้ต แล้วบันทึกเป็นไฟล์ .txt</li>
+      <li>กลับมาที่หน้านี้ แล้วนำไฟล์นั้นไปวางในกล่องใต้รูปภาพ</li>
+      <li>ถ้ารหัสตรงกับรูป ปุ่มกดด้านบนสุดของหน้าจะกดได้ทีละ 100 ทันที ต้องไปกดที่ปุ่มนั้นเท่านั้น</li>
+    </ol>
+    <button class="btn" id="closeHelp" type="button">ปิด</button>
+  </div>
+</div>
+<main>
+  <h1>กิจกรรมแบบทดสอบคัดเลือกหัวหน้าแก๊งหมูปิ้ง</h1>
+  <div class="mission">ใครกดได้ <b>2,000 คะแนน</b> จะได้รับ <b>บัตรเชิญพิเศษ</b></div>
+
+  <section class="score" aria-live="polite">
+    <div class="num" id="score">0</div>
+    <div class="sub" id="left">อีก 2,000 คะแนน</div>
+    <div class="track"><div id="bar"></div></div>
+  </section>
+
+  <div class="stage" id="stage">
+    <button id="tap" type="button"><span class="e">🍢</span>กดเลย</button>
+  </div>
+
+  <section id="ticketBox" hidden>
+    <h2 id="tHead">ยินดีด้วย! คุณได้บัตรเชิญพิเศษ</h2>
+    <p id="tMsg" class="secret" hidden></p>
+    <p>เลขพิเศษของคุณคือ <b id="tcode"></b></p>
+    <img id="ticketImg" alt="บัตรเชิญพิเศษแก๊งหมูปิ้ง">
+    <div><a class="btn" id="dl" href="#" download="ticket.png">บันทึกบัตรเป็นรูปภาพ</a></div>
+    <div id="custom" hidden></div>
+  </section>
+
+  <div class="gap" style="height:10000px" aria-hidden="true"></div>
+  <section class="special" id="special">
+    <div class="gap" aria-hidden="true"></div>
+    <img id="ref" alt="" referrerpolicy="no-referrer">
+    <label id="drop" for="file">
+      <input type="file" id="file" accept=".txt,.b64,.base64,text/plain">
+      <b>📁 วางไฟล์ที่นี่</b>
+    </label>
+    <div id="msg" role="status"></div>
+    <img id="dec" alt="">
+    <div class="gap" style="height:2000px" aria-hidden="true"></div>
+    <button id="menuBtn" type="button" aria-label="เมนู">☰</button>
+    <p style="text-align:center;color:var(--mute);font-size:13px;margin:8px 0 0">กดเพื่อเปิดคู่มือ</p>
+  </section>
+</main>
+
+<script>
+
+/* ===================== AUTH SYSTEM (Local + Optional Firebase) ===================== */
+// ถ้าอยากใช้ระบบข้ามเครื่อง ให้วาง firebaseConfig จริงตรงนี้
+const firebaseConfig = {apiKey:'AIzaSyCw8TSVmJhwdAk34BnWc9pVoSi9nzv9xVM',authDomain:'gangmoopping.firebaseapp.com',databaseURL:'https://gangmoopping-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'gangmoopping',storageBucket:'gangmoopping.firebasestorage.app',messagingSenderId:'650180208905',appId:'1:650180208905:web:fad48509bb8f78f52c0bd8',measurementId:'G-8NFH9YW0BX'};
+let db = null, auth = null, currentUser = null;
+let claims = {spy:null,hunter:null,joker:null};
+try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); db=firebase.database(); auth=firebase.auth(); } catch(e) { console.error('Firebase initialization failed',e); }
+
+function showGate() {
+  document.getElementById('authGate').classList.remove('hidden');
+  document.getElementById('authLogin').classList.add('hidden');
+  document.getElementById('userBar').classList.remove('show');
+  document.body.classList.remove('has-user');
+}
+function showLogin() {
+  document.getElementById('authGate').classList.add('hidden');
+  document.getElementById('authLogin').classList.remove('hidden');
+}
+function enterGame(user) {
+  currentUser = user;
+  document.getElementById('authGate').classList.add('hidden');
+  document.getElementById('authLogin').classList.add('hidden');
+  document.getElementById('userBar').classList.add('show');
+  document.body.classList.add('has-user');
+  document.getElementById('userName').textContent = user.name;
+  if(user.name==='@@@'&&!document.getElementById('adminResetBtn')){const b=document.createElement('button');b.id='adminResetBtn';b.textContent='รีเซ็ตเว็บ';b.className='btn alt';b.style.margin='0 0 0 8px';b.onclick=adminReset;document.getElementById('userBar').appendChild(b);}
+  updateUserRoleDisplay();
+  // start listening claims
+  if (db) listenClaims();
+  // restore game state display
+  render();
+  showTicket();
+  setTimeout(() => window.scrollTo(0, document.getElementById('up').offsetHeight), 50);
+}
+
+function updateUserRoleDisplay() {
+  const el = document.getElementById('userRole');
+  if (!currentUser) { el.textContent = '-'; return; }
+  let r = [];
+  if (currentUser.role === 'spy') r.push('สายลับ');
+  if (currentUser.role === 'hunter') r.push('ตามล่า');
+  if (currentUser.role === 'joker') r.push('โจ๊กเกอร์');
+  if (currentUser.ticket) r.push('บัตร ' + currentUser.ticket);
+  el.textContent = r.length ? r.join(' · ') : 'ยังไม่มีสิทธิ์พิเศษ';
+}
+
+// Gate password
+document.getElementById('gateBtn').onclick = () => {
+  const p = document.getElementById('gatePass').value.trim();
+  if (p === '@หมูปิ้ง_404') {
+    document.getElementById('gateErr').textContent = '';
+    showLogin();
+  } else {
+    document.getElementById('gateErr').textContent = 'รหัสผ่านไม่ถูกต้อง';
+  }
+};
+document.getElementById('gatePass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('gateBtn').click();
+});
+
+// Firebase Authentication: ชื่อผู้ใช้ถูกแปลงเป็นอีเมลภายในเพื่อให้ใช้ชื่อ/รหัสผ่านได้
+function authEmail(name){ const key=btoa(unescape(encodeURIComponent(name.toLowerCase()))).replace(/[^a-zA-Z0-9]/g,''); return key+'@gangmoopping.com'; }
+function safeName(name){ return name.replace(/[.#$\[\]\/]/g,'_').slice(0,20); }
+async function finishLogin(user,name){
+  const ref=db.ref('players/'+user.uid);
+  const snap=await ref.once('value');
+  let profile=snap.val();
+  if(!profile){ profile={name:name||user.displayName||'ผู้เล่น',created:Date.now(),state:{score:0,unlocked:false,ticket:null}}; await ref.set(profile); }
+  else if(name && profile.name!==name){ profile.name=name; await ref.child('name').set(name); }
+  enterGame({uid:user.uid,name:profile.name||name||'ผู้เล่น',role:profile.role||null,ticket:profile.ticket||null});
+  await loadCloudState();
+}
+document.getElementById('loginBtn').onclick=async()=>{
+ const name=safeName(document.getElementById('loginName').value.trim()),pass=document.getElementById('loginPass').value,err=document.getElementById('loginErr');
+ if(!name||name.length<2){err.textContent='ชื่อสั้นเกินไป';return;} if(!pass||pass.length<6){err.textContent='รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';return;}
+ if(!auth||!db){err.textContent='Firebase ยังเชื่อมต่อไม่ได้';return;}
+ const email=authEmail(name);
+ try{ let credential; try{credential=await auth.signInWithEmailAndPassword(email,pass);}catch(e){ if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){credential=await auth.createUserWithEmailAndPassword(email,pass);}else throw e;} await finishLogin(credential.user,name); }catch(e){err.textContent=e.code==='auth/email-already-in-use'?'ชื่อนี้ถูกใช้แล้ว':e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?'ชื่อหรือรหัสผ่านไม่ถูกต้อง':'เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code);}
+};
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+let redirectedGoogleUser=null;
+document.getElementById('googleBtn').onclick=async()=>{const err=document.getElementById('loginErr');try{if(redirectedGoogleUser){await finishLogin(redirectedGoogleUser,redirectedGoogleUser.displayName);return;}const provider=new firebase.auth.GoogleAuthProvider();await auth.signInWithRedirect(provider);}catch(e){err.textContent='Google Login ไม่สำเร็จ';}};
+auth.getRedirectResult().then(result=>{if(result.user)redirectedGoogleUser=result.user;}).catch(e=>console.error(e));
+
+
+// รีเซ็ตเฉพาะสถานะกิจกรรม ไม่ลบบัญชี Authentication หรือโปรไฟล์ผู้เล่น
+async function adminReset(){
+ if(!currentUser||currentUser.name!=='@@@'){alert('ไม่มีสิทธิ์ผู้ดูแล');return;}
+ const code=prompt('รหัสผู้ดูแล');if(code!=='123'){alert('รหัสไม่ถูกต้อง');return;}
+ if(!confirm('ยืนยันรีเซ็ตสถานะกิจกรรมทั้งหมด? บัญชีสมาชิกจะไม่ถูกลบ'))return;
+ try{await db.ref('claims').update({spy:null,hunter:null,joker:null});const snap=await db.ref('players').once('value');const all=snap.val()||{};for(const uid of Object.keys(all)){await db.ref('players/'+uid).update({state:{score:0,unlocked:false,ticket:null},role:null,ticket:null});}
+ S={score:0,unlocked:false,ticket:null};save();lock=false;stopAll();document.documentElement.classList.remove('glitch','spyfx');$('#ticketBox').hidden=true;$('#dec').style.display='none';setMsg('','');render();alert('รีเซ็ตสถานะกิจกรรมแล้ว บัญชีสมาชิกยังอยู่ครบ');
+ }catch(e){console.error(e);alert('รีเซ็ตไม่สำเร็จ ตรวจสอบ Firebase Rules');}
+}
+
+// Global claims: ใช้ transaction เพื่อกันการจองซ้ำจากหลายเครื่อง
+function listenClaims(){ if(!db)return; db.ref('claims').on('value',snap=>{claims=snap.val()||{spy:null,hunter:null,joker:null};updateUserRoleDisplay();}); }
+async function claimRole(role){
+ if(!currentUser||!db){alert('กรุณาเข้าสู่ระบบออนไลน์ก่อน');return false;}
+ try{const ref=db.ref('claims/'+role);const result=await ref.transaction(v=>v===null||v===currentUser.uid?currentUser.uid:undefined);
+ if(!result.committed){const owner=claims[role];alert('สิทธิ์นี้ถูกจองแล้ว'+(owner?' โดยผู้เล่นคนอื่น':''));return false;}
+ await db.ref('players/'+currentUser.uid+'/role').set(role);currentUser.role=role;updateUserRoleDisplay();return true;
+ }catch(e){console.error(e);alert('จองสิทธิ์ไม่สำเร็จ กรุณาตรวจสอบ Firebase Rules และอินเทอร์เน็ต');return false;}
+}
+let lastCloudState='';
+async function loadCloudState(){if(!currentUser||!db)return;try{const ref=db.ref('players/'+currentUser.uid+'/state');ref.on('value',snap=>{const cloud=snap.val();if(!cloud)return;const encoded=JSON.stringify(cloud);if(encoded===lastCloudState)return;lastCloudState=encoded;S=Object.assign({score:0,unlocked:false,ticket:null},cloud);render();showTicket();if(S.spy)document.documentElement.classList.add('spyfx');else document.documentElement.classList.remove('spyfx');if(S.glitch)document.documentElement.classList.add('glitch');else document.documentElement.classList.remove('glitch');});}catch(e){console.error(e);}}
+
+// Override original role setters to use claim
+// We will patch after original code loads
+
+
+const $ = s => document.querySelector(s);
+const GOAL = 2000;
+const REF = 'https://i.postimg.cc/26zxMqtS/20260419-165955.jpg';
+
+const mem = {};
+const store = {
+  get(k, d){ return k in mem ? mem[k] : d; },
+  set(k, v){ mem[k] = v; },
+  del(k){ delete mem[k]; }
+};
+let S = store.get('gang_state', {score:0, unlocked:false, ticket:null});
+const save = () => { store.set('gang_state', S); if(currentUser&&db){const encoded=JSON.stringify(S);lastCloudState=encoded;db.ref('players/'+currentUser.uid+'/state').set(S).catch(e=>console.error('State sync failed',e));} };
+const fmt = n => n.toLocaleString('th-TH');
+
+const goalOf = () => (S.spy || S.hunter) ? GOAL : S.score >= 10000 ? 100000 : S.score >= 4750 ? 10000 : S.score >= 1900 ? 5000 : GOAL;
+const tapVal = () => (S.unlocked || (!S.spy && !S.hunter && S.score >= 10000)) ? 100 : 1;
+function render(){
+  const G = goalOf();
+  $('#score').textContent = fmt(Math.min(S.score, G));
+  $('#bar').style.width = Math.min(100, S.score / G * 100) + '%';
+  $('#left').textContent = S.score >= G ? 'ครบ ' + fmt(G) + ' คะแนนแล้ว!' : 'อีก ' + fmt(G - S.score) + ' คะแนน';
+}
+let pops = 0;
+function pop(text, el){
+  if (pops > 14) return; pops++;
+  const s = document.createElement('span');
+  s.className = 'pop'; s.textContent = text;
+  const r = el.getBoundingClientRect(), p = el.offsetParent.getBoundingClientRect();
+  s.style.left = (r.left - p.left + r.width / 2 - 20 + (Math.random() * 60 - 30)) + 'px';
+  s.style.top = (r.top - p.top + 10) + 'px';
+  el.offsetParent.appendChild(s);
+  setTimeout(() => { s.remove(); pops--; }, 850);
+}
+let saveT = 0, rafR = 0, lock = false;
+const saveSoon = () => { if (!saveT) saveT = setTimeout(() => { saveT = 0; save(); }, 250); };
+const renderSoon = () => { if (!rafR) rafR = requestAnimationFrame(() => { rafR = 0; render(); }); };
+addEventListener('pagehide', save);
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+function add(n, el){
+  if (lock) return;
+  S.score += n; pop('+' + n, el);
+  if (S.spy || S.hunter){
+    if (S.score >= GOAL){
+      lock = true;
+      if (!S.ticket) makeTicket();
+      save(); render();
+      setTimeout(() => { S.score = 0; lock = false; save(); render(); }, 1200);
+      return;
+    }
+  } else {
+    if (S.score >= 5000 && !S.five){ S.five = true; playOnly('five'); }
+    if (S.score >= 10000 && !S.glitch){ S.glitch = true; document.documentElement.classList.add('glitch'); }
+    if (S.score >= 100000){
+      S.score = 100000; lock = true;
+      if (!S.ticket) makeTicket('joker');
+      save(); render(); return;
+    }
+  }
+  saveSoon(); renderSoon();
+}
+function bindTap(el, fn){
+  el.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); fn(); });
+  el.addEventListener('click', e => { if (e.detail === 0) fn(); });
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+bindTap($('#tap'), () => add(tapVal(), $('#tap')));
+
+/* ---------- บัตรเชิญ ---------- */
+function rng(a){
+  return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+async function makeTicket(kind){
+  if (kind === 'joker') {
+    if (claims.joker && claims.joker !== currentUser?.uid) {
+      alert('โจ๊กเกอร์ถูกจองแล้ว');
+      return;
+    }
+    const ok = await claimRole('joker');
+    if (!ok) return;
+  }
+  const used = store.get('gang_used', []);
+  let code, seed, tries = 0;
+  do {
+    code = kind === 'joker' ? '12345' : String(10000 + Math.floor(Math.random() * 90000));
+    if (kind !== 'joker' && code === '12345') code = '12346';
+    seed = (Math.random() * 4294967296) >>> 0;
+    tries++;
+  } while (used.some(u => u.seed === seed || u.code === code) && tries < 999);
+  used.push({code, seed}); store.set('gang_used', used);
+  S.ticket = {code, seed, role: kind === 'joker' ? 'joker' : (S.spy ? 'spy' : 'hunter'), mark: (kind !== 'joker' && S.spy) ? 'check' : 'thumb', theme:{hue:null, pos:0, big:true, both:false}}; save();
+  if (currentUser && db) {
+    db.ref('players/' + currentUser.uid + '/ticket').set(code);
+    currentUser.ticket = code;
+    updateUserRoleDisplay();
+  }
+  showTicket().then(() => $('#ticketBox').scrollIntoView({behavior:'smooth'}));
+}
+function blob(c, r, cx, cy, R, scale){
+  const n = 5 + Math.floor(r() * 9), rot = r() * Math.PI * 2, smooth = r() > .5, pts = [];
+  for (let i = 0; i < n * 2; i++){
+    const a = rot + i * Math.PI / n, k = (i % 2 ? .36 + r() * .3 : .8 + r() * .2) * scale;
+    pts.push([cx + Math.cos(a) * R * k, cy + Math.sin(a) * R * k]);
+  }
+  c.beginPath();
+  if (smooth){
+    const m = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], L = pts.length;
+    let s = m(pts[L - 1], pts[0]); c.moveTo(s[0], s[1]);
+    for (let i = 0; i < L; i++){ const e = m(pts[i], pts[(i + 1) % L]); c.quadraticCurveTo(pts[i][0], pts[i][1], e[0], e[1]); }
+  } else {
+    c.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(p => c.lineTo(p[0], p[1]));
+  }
+  c.closePath();
+}
+function shape(c, r, cx, cy, R, fam){
+  if (fam === 0) return blob(c, r, cx, cy, R, 1);
+  c.beginPath();
+  if (fam === 1){
+    const k = 3 + Math.floor(r() * 7), a = .18 + r() * .22, m = 2 + Math.floor(r() * 8), b = r() * .12, ph = r() * 6.28;
+    for (let i = 0; i <= 200; i++){
+      const t = i / 200 * Math.PI * 2, d = R * (.62 + a * Math.cos(k * t + ph) + b * Math.cos(m * t));
+      const x = cx + Math.cos(t) * d, y = cy + Math.sin(t) * d; i ? c.lineTo(x, y) : c.moveTo(x, y);
+    }
+  } else if (fam === 2){
+    const n = 3 + Math.floor(r() * 7), rot = r() * 6.28, j = r() * .18;
+    for (let i = 0; i < n; i++){
+      const t = rot + i * Math.PI * 2 / n, d = R * (.88 - r() * j);
+      const x = cx + Math.cos(t) * d, y = cy + Math.sin(t) * d; i ? c.lineTo(x, y) : c.moveTo(x, y);
+    }
+  } else {
+    const n = 4 + Math.floor(r() * 7), pr = R * (.26 + r() * .12), rot = r() * 6.28;
+    for (let i = 0; i < n; i++){
+      const t = rot + i * Math.PI * 2 / n, x = cx + Math.cos(t) * R * .62, y = cy + Math.sin(t) * R * .62;
+      c.moveTo(x + pr, y); c.arc(x, y, pr, 0, 6.29);
+    }
+    c.moveTo(cx + R * .3, cy); c.arc(cx, cy, R * .3, 0, 6.29);
+  }
+  c.closePath();
+}
+async function draw(t){
+  const code = t.code, seed = t.seed, th = t.theme || {};
+  try{ await document.fonts.load('800 40px Kanit'); await document.fonts.load('400 20px Kanit'); }catch(e){}
+  const W = 640, H = 1040, sy = 740, n = 32, r = rng(seed);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d'), p = new Path2D(), q = 30;
+  p.moveTo(q, 0); p.lineTo(W - q, 0); p.quadraticCurveTo(W, 0, W, q); p.lineTo(W, sy - n);
+  p.arc(W, sy, n, -Math.PI / 2, Math.PI / 2, true);
+  p.lineTo(W, H - q); p.quadraticCurveTo(W, H, W - q, H); p.lineTo(q, H); p.quadraticCurveTo(0, H, 0, H - q);
+  p.lineTo(0, sy + n); p.arc(0, sy, n, Math.PI / 2, -Math.PI / 2, true);
+  p.lineTo(0, q); p.quadraticCurveTo(0, 0, q, 0); p.closePath();
+  c.save(); c.clip(p);
+  const g = c.createLinearGradient(0, 0, 0, sy); if (th.hue != null){ g.addColorStop(0, 'hsl(' + th.hue + ',55%,10%)'); g.addColorStop(1, 'hsl(' + th.hue + ',70%,28%)'); } else { g.addColorStop(0, '#2a1308'); g.addColorStop(1, '#8a2f0d'); }
+  c.fillStyle = g; c.fillRect(0, 0, W, sy);
+  c.fillStyle = '#fff1d6'; c.fillRect(0, sy, W, H - sy);
+  c.textAlign = 'center'; c.fillStyle = '#ffb066';
+  c.font = '400 26px Kanit, sans-serif'; c.fillText('บัตรเชิญพิเศษสำหรับผู้ผ่านการทดสอบ', W / 2, 78);
+  c.fillStyle = '#fff1d6'; c.font = '800 66px Kanit, sans-serif'; c.fillText('แก๊งหมูปิ้ง', W / 2, 160);
+  // รูปร่างพิเศษ (สุ่มจาก seed)
+  const cx = W / 2, cy = 420, R = 200, h0 = Math.floor(r() * 360), hue = th.hue != null ? th.hue : h0;
+  c.shadowColor = 'hsla(' + hue + ',100%,60%,.7)'; c.shadowBlur = 40;
+  shape(c, r, cx, cy, R, Math.floor(r() * 4));
+  const gg = c.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+  gg.addColorStop(0, 'hsl(' + hue + ',95%,62%)'); gg.addColorStop(1, 'hsl(' + ((hue + 60) % 360) + ',90%,42%)');
+  c.fillStyle = gg; c.fill(); c.shadowBlur = 0;
+  c.lineWidth = 8; c.strokeStyle = '#fff1d6'; c.stroke();
+  shape(c, r, cx, cy, R * .5, Math.floor(r() * 4)); c.fillStyle = 'hsla(' + ((hue + 180) % 360) + ',80%,25%,.55)'; c.fill();
+  c.lineWidth = 4; c.stroke();
+  for (let i = 0; i < 9; i++){
+    const a = r() * Math.PI * 2, d = r() * R * .85;
+    c.beginPath(); c.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 4 + r() * 7, 0, 7);
+    c.fillStyle = 'rgba(255,241,214,.8)'; c.fill();
+  }
+    const POS = [[560,250],[80,250],[560,610],[80,610]];
+  const circ = (x, y, rad) => { c.beginPath(); c.arc(x, y, rad, 0, 7); c.fillStyle = '#fff1d6'; c.fill(); c.lineWidth = 5; c.strokeStyle = '#2a1308'; c.stroke(); };
+  const thumb = (x, y) => { circ(x, y, 38); c.font = '44px sans-serif'; c.fillStyle = '#000'; c.fillText('👍', x, y + 15); };
+  const tick = (x, y, rad) => { circ(x, y, rad); c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = rad * .24; c.strokeStyle = '#1fa84f';
+    c.beginPath(); c.moveTo(x - rad * .45, y + rad * .02); c.lineTo(x - rad * .12, y + rad * .36); c.lineTo(x + rad * .5, y - rad * .36); c.stroke(); };
+  if (t.mark === 'check'){
+    const q = POS[th.pos || 0]; tick(q[0], q[1], th.big === false ? 22 : 38);
+    if (th.both) thumb(POS[0][0], POS[0][1]);
+  } else thumb(POS[0][0], POS[0][1]);
+  c.font = '600 32px Kanit, sans-serif'; c.fillStyle = '#fff1d6'; c.fillText('คัดเลือกหัวหน้าแก๊ง', W / 2, 692);
+  // ตัวบัตรส่วนล่าง
+  c.fillStyle = '#2a1308'; c.font = '400 24px Kanit, sans-serif'; c.fillText('เลขพิเศษประจำบัตร', W / 2, 805);
+  c.font = '800 104px Kanit, sans-serif';
+  try{ c.letterSpacing = '10px'; }catch(e){}
+  c.fillText(code, W / 2 + 5, 905);
+  try{ c.letterSpacing = '0px'; }catch(e){}
+  const rb = rng(Number(code) * 31 + seed);
+  let x = 70; c.fillStyle = '#2a1308';
+  while (x < W - 70){ const w = 3 + Math.floor(rb() * 7); c.fillRect(x, 935, w, 55); x += w + 3 + Math.floor(rb() * 6); }
+  c.font = '400 20px Kanit, sans-serif'; c.fillText('ผู้ถือบัตรนี้ได้รับสิทธิ์เป็นหัวหน้าแก๊ง 1 ท่าน', W / 2, 1022);
+  c.restore();
+  c.save(); c.clip(p); c.setLineDash([12, 10]); c.strokeStyle = '#8a2f0d'; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(n + 8, sy); c.lineTo(W - n - 8, sy); c.stroke(); c.restore();
+  return cv;
+}
+async function showTicket(){
+  const t = S.ticket; if (!t) return;
+  const cv = await draw(t), url = cv.toDataURL('image/png'), ck = t.mark === 'check';
+  $('#ticketBox').hidden = false;
+  $('#tcode').textContent = t.code;
+  $('#ticketImg').src = url;
+  const a = $('#dl'); a.href = url; a.download = 'gang-moopING-ticket-' + t.code + '.png';
+  buildCustom(ck);
+}
+function buildCustom(on){
+  const box = $('#custom'); box.hidden = !on; box.innerHTML = '';
+  if (!on) return;
+  const th = S.ticket.theme, upd = f => { f(th); save(); showTicket(); };
+  const btn = (txt, f, cls, bg) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
+    if (cls) b.className = cls; if (bg) b.style.background = bg; b.onclick = f; box.appendChild(b); return b; };
+  [[null,'#8a2f0d'],[210,'hsl(210,70%,40%)'],[140,'hsl(140,60%,32%)'],[280,'hsl(280,60%,40%)'],[350,'hsl(350,70%,45%)']]
+    .forEach(([h, col]) => btn('', () => upd(x => x.hue = h), 'sw', col));
+  btn('สุ่มรูปร่างใหม่', () => {
+    const used = store.get('gang_used', []); let sd;
+    do { sd = (Math.random() * 4294967296) >>> 0; } while (used.some(u => u.seed === sd));
+    const me = used.find(u => u.code === S.ticket.code); if (me) me.seed = sd;
+    store.set('gang_used', used); S.ticket.seed = sd; save(); showTicket();
+  });
+  btn('ย้าย ✓', () => upd(x => { x.pos = (x.pos + 1) % 4; if (x.both && x.pos === 0) x.pos = 1; }));
+  btn(th.big === false ? 'ขยาย ✓' : 'ย่อ ✓', () => upd(x => x.big = x.big === false));
+  btn(th.both ? 'เอา 👍 ออก' : 'เพิ่ม 👍', () => upd(x => { x.both = !x.both; if (x.both && x.pos === 0) x.pos = 1; }));
+}
+
+/* ---------- รูปต้นฉบับ + ตรวจไฟล์ base64 ---------- */
+const ref = $('#ref');
+let refReady = false;
+ref.onload = () => { refReady = true; };
+ref.onerror = () => {
+  if (ref.crossOrigin){ ref.removeAttribute('crossorigin'); ref.src = REF; }
+  else { refReady = false;  }
+};
+ref.crossOrigin = 'anonymous'; ref.src = REF;
+
+function setMsg(t, cls){ const m = $('#msg'); m.textContent = t; m.className = cls || ''; }
+function parseB64(text){
+  let t = text.trim();
+  const m = t.match(/data:[^;,]*;base64,/i);
+  if (m) t = t.slice(t.indexOf(m[0]) + m[0].length);
+  t = t.replace(/\s+/g, '');
+  const mm = t.match(/^[A-Za-z0-9+/_-]+={0,2}/);
+  if (!mm || mm[0].length < 200) throw new Error('ไฟล์ไม่ถูกต้อง');
+  t = mm[0].replace(/-/g, '+').replace(/_/g, '/');
+  while (t.length % 4) t += '=';
+  let bin; try{ bin = atob(t); }catch(e){ throw new Error('ไฟล์ไม่ถูกต้อง'); }
+  const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u;
+}
+function mimeOf(b){
+  if (b[0] === 0xFF && b[1] === 0xD8) return 'image/jpeg';
+  if (b[0] === 0x89 && b[1] === 0x50) return 'image/png';
+  if (b[0] === 0x47 && b[1] === 0x49) return 'image/gif';
+  if (b[0] === 0x52 && b[1] === 0x49 && b[8] === 0x57) return 'image/webp';
+  return null;
+}
+const loadImg = url => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+function sig(img){
+  const c = document.createElement('canvas'); c.width = c.height = 24;
+  const x = c.getContext('2d'); x.drawImage(img, 0, 0, 24, 24);
+  const d = x.getImageData(0, 0, 24, 24).data, o = [];
+  for (let i = 0; i < d.length; i += 4) o.push(d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11);
+  return o;
+}
+async function verify(bytes){
+  const mime = mimeOf(bytes);
+  if (!mime) throw new Error('ไฟล์ไม่ถูกต้อง');
+  const url = URL.createObjectURL(new Blob([bytes], {type: mime}));
+  let dec;
+  try{ dec = await loadImg(url); }catch(e){ throw new Error('ไฟล์ไม่ถูกต้อง'); }
+  const pv = $('#dec'); pv.src = url; pv.style.display = 'block';
+  if (!refReady) throw new Error('ยังตรวจไม่ได้ ลองรีเฟรชหน้านี้');
+  // 1) เทียบไบต์ตรงตัว
+  try{
+    const r = await fetch(REF, {mode:'cors'}), b = new Uint8Array(await r.arrayBuffer());
+    if (b.length === bytes.length && b.every((v, i) => v === bytes[i])) return {ok:true, how:'ตรงกับรูปต้นฉบับทุกไบต์'};
+  }catch(e){}
+  // 2) เทียบพิกเซล
+  try{
+    const ar = dec.naturalWidth / dec.naturalHeight, br = ref.naturalWidth / ref.naturalHeight;
+    const a = sig(dec), b = sig(ref);
+    const diff = a.reduce((s, v, i) => s + Math.abs(v - b[i]), 0) / a.length;
+    return {ok: Math.abs(ar - br) < .03 && diff < 18, how:'สแกนเทียบภาพแล้ว'};
+  }catch(e){}
+  // 3) เทียบขนาดภาพ (กรณีเบราว์เซอร์ไม่ให้อ่านพิกเซล)
+  return {ok: dec.naturalWidth === ref.naturalWidth && dec.naturalHeight === ref.naturalHeight, how:'ตรวจขนาดภาพตรงกัน'};
+}
+async function handleFile(f){
+  if (!f) return;
+  $('#dec').style.display = 'none';
+  setMsg('กำลังสแกน...', '');
+  try{
+    if (f.type.indexOf('image/') === 0) throw new Error('ไฟล์ไม่ถูกต้อง');
+    const res = await verify(parseB64(await f.text()));
+    if (res.ok){
+      S.unlocked = true; save(); render();
+      setMsg('✅ ผ่าน', 'ok');
+      setTimeout(() => $('#stage').scrollIntoView({block:'center'}), 700);
+    } else {
+      setMsg('❌ ไม่ตรง', 'bad');
+    }
+  }catch(e){ setMsg('❌ ' + e.message, 'bad'); }
+}
+const drop = $('#drop');
+$('#file').onchange = e => { handleFile(e.target.files[0]); e.target.value = ''; };
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+let tt = 0;
+$('h1').onclick = () => {
+  if (++tt < 7) return; tt = 0;
+  if (!confirm('รีเซ็ตคะแนนและบัตรทั้งหมด?')) return;
+  store.del('gang_state'); S = {score:0, unlocked:false, ticket:null}; lock = false; stopAll(); document.documentElement.classList.remove('glitch', 'spyfx');
+  $('#ticketBox').hidden = true; $('#dec').style.display = 'none'; setMsg('', ''); render();
+};
+
+if (S.score >= GOAL){ S.score = 0; save(); }
+const AUD = {}, SONG = {
+  manual: 'https://videotourl.com/audio/1793538000115-accbbb14-c981-43bd-ad45-8de6214d6a5d.mp3',
+  green: 'https://videotourl.com/audio/1793538995476-876ee981-11ed-4f12-9f79-1f576f26925d.mp3',
+  spy: 'https://videotourl.com/audio/1793539509678-ae532f70-a39a-4921-b658-05e449b379ca.mp3',
+  hunt: 'https://www.image2url.com/r2/default/audio/1793540756987-cefbeb21-794f-4860-bb4f-3d075a491d05.mp3',
+  five: 'https://www.image2url.com/r2/default/audio/1793541406057-65eb34c8-b197-4e36-bdae-daa58eefbcec.mp3',
+  joker: 'https://www.image2url.com/r2/default/audio/1793543225210-e4942170-aa07-45ed-8b79-7c8fd91ec225.mp3'
+};
+Object.keys(SONG).forEach(k => { const a = new Audio(); a.preload = 'auto'; a.loop = true; a.src = SONG[k]; a.load(); AUD[k] = a; });
+function stopAll(){ Object.values(AUD).forEach(a => { a._want = false; a.pause(); a.currentTime = 0; }); }
+function playOnly(k){
+  stopAll(); const a = AUD[k]; if (!a) return;
+  a._want = true; a.muted = false; const p = a.play(); if (p && p.catch) p.catch(() => {});
+}
+// ปลดล็อกเสียงด้วยการแตะครั้งแรก เพื่อให้ทุกเพลงเล่นได้ทันที
+document.addEventListener('pointerdown', () => {
+  Object.values(AUD).forEach(a => {
+    if (a._want) return;
+    a.muted = true; const p = a.play();
+    const done = () => { if (!a._want){ a.pause(); a.currentTime = 0; } a.muted = false; };
+    if (p && p.then) p.then(done).catch(() => { a.muted = false; }); else a.muted = false;
+  });
+}, {once:true, passive:true});
+const JOKER_TEXT = 'คุณคือคนที่กดถึง 100,000 รอบ และคุณได้รับสิทธิพิเศษที่จะเป็นโจ๊กเกอร์\n\nหน้าที่ของคุณก็คือ จะต้องทำให้ตัวเองโดนกำจัดออกจากการที่คนที่ตามล่าสปาย ถ้าเขาโหวตมาที่เรา โจ๊กเกอร์ เขาจะไม่สามารถกำจัดเราได้\n\nวิธีชนะของโจ๊กเกอร์ในแบบทดสอบที่ 2 ถ้าโจ๊กเกอร์ทำให้เกมล่มได้ โจ๊กเกอร์จะเป็นฝ่ายชนะ แล้วได้เป็นหัวหน้าแก๊งหมูปิ้ง';
+const SPY_TEXT = 'คุณรู้ตัวหรือไม่ว่าคุณได้สิทธิ์พิเศษบางอย่าง ซึ่งนี่จะทำให้คุณเป็นสายลับหรือ spy\n\nและจะบอกอะไรให้อย่างหนึ่ง มีโอกาสที่จะมีคนมีสิทธิ์พิเศษอีกอย่างหนึ่ง เป็นสิทธิพิเศษที่จะต้องตามหาตัวคุณให้เจอ ถ้าเขาเจอตัวคุณ เขาจะได้เป็นหัวหน้าแก๊งทันที\n\nแต่ถ้าคุณไม่ถูกจับได้จนคุณเล่นผ่านเว็บที่จะมาถึงเร็วๆ นี้ ถ้าคุณอยู่รอดได้แบบไม่โดนใครจับได้ คุณจะได้เป็นหัวหน้าแก๊งหมูปิ้งทันที\n\nแต่ก็ระวังเอาไว้ว่าคนที่จะตามหาคุณอาจจะรู้อะไรบางอย่างกับบัตรคุณก็ได้ เพราะงั้นต้องระวัง';
+const HUNT_TEXT = 'คุณได้รับสิทธิ์พิเศษ ซึ่งคุณจะได้รู้ความลับนี้ว่าจะมี spy\n\nหน้าที่ของคุณก็คือ คุณจะต้องตามหา spy ให้ได้ ถ้าคุณตามหา spy ได้ คุณจะต้องเข้าไปในแชทแก๊งหมูปิ้ง พูดคุย แล้วคุณต้องพิมพ์ /(รหัสพิเศษของสปาย) สปายจะถูกกำจัด แล้วคุณจะได้เป็นหัวหน้าแก๊งหมูปิ้ง\n\nแต่ก็ต้องระวังเอาไว้เหมือนกันว่า ถ้าสปายไม่ได้ถูกจับ ถ้าสปายเล่นเกมที่ 2 ผ่านในอนาคต เขาจะได้เป็นหัวหน้าแทน\n\nแต่คุณไม่สามารถพิมพ์มั่วๆ ได้ว่าใครคือ spy คุณจะต้องมีหลักฐาน ห้ามปรึกษาใคร เก็บเป็นความลับ';
+['https://i.postimg.cc/GmYybL0g/file-00000000cfdc8207b36ebf408b99f838.png','https://i.postimg.cc/HLdVHb98/file-00000000895482118dfaac16dd91b073.png'].concat(['https://i.postimg.cc/P53Jh5TD/file-00000000c8f48211b064ea41e4c2d7df.png']).forEach(u => { new Image().src = u; });
+let typing = 0, typed = false, fullText = '';
+function finish(){ clearInterval(typing); typed = true; $('#scrDl').style.display = 'inline-block'; $('#scr').scrollTop = $('#scr').scrollHeight; }
+function openScr(kind){
+  const el = $('#scr'), tx = $('#scrText');
+  fullText = kind === 'spy' ? SPY_TEXT : kind === 'hunter' ? HUNT_TEXT : JOKER_TEXT;
+  playOnly(kind === 'spy' ? 'spy' : kind === 'hunter' ? 'hunt' : 'joker');
+  if (kind === 'joker') document.documentElement.classList.remove('glitch');
+  el.className = (kind === 'spy' ? 'black' : kind === 'hunter' ? 'white' : 'joker') + ' open';
+  document.body.style.overflow = 'hidden';
+  tx.textContent = ''; typed = false; let i = 0;
+  const d = $('#scrDl'); d.style.display = 'none'; d.href = $('#dl').href; d.download = $('#dl').download; clearInterval(typing);
+  typing = setInterval(() => {
+    i++; tx.textContent = fullText.slice(0, i); el.scrollTop = el.scrollHeight;
+    if (i >= fullText.length) finish();
+  }, 32);
+}
+$('#scr').addEventListener('click', () => {
+  if (!typed){ $('#scrText').textContent = fullText; finish(); return; }
+  $('#scr').className = ''; document.body.style.overflow = '';
+});
+$('#dl').addEventListener('click', e => {
+  const t = S.ticket;
+  if (t && (t.role === 'spy' || t.role === 'hunter' || t.role === 'joker')){ e.preventDefault(); openScr(t.role); }
+});
+$('#scrDl').addEventListener('click', e => e.stopPropagation());
+let toastT = 0;
+$('#green').addEventListener('click', async () => {
+  if (S.spy) return;
+  if (claims.hunter && claims.hunter !== currentUser?.uid) {
+    alert('สิทธิ์ตามล่าถูกจองแล้ว');
+    return;
+  }
+  const ok = await claimRole('hunter');
+  if (!ok) return;
+  S.hunter = true; save(); playOnly('green');
+  const t = $('#toast'); t.textContent = 'ไปกดปุ่มให้ครบ 2,000'; t.style.display = 'block';
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3000);
+});
+const help = $('#help'), closeHelp = () => help.classList.remove('open');
+$('#menuBtn').onclick = async () => {
+  if (S.hunter) return;
+  if (claims.spy && claims.spy !== currentUser?.uid) {
+    alert('สิทธิ์สายลับถูกจองแล้ว');
+    return;
+  }
+  if (!S.spy){
+    const ok = await claimRole('spy');
+    if (!ok) return;
+    S.spy = true; save(); document.documentElement.classList.add('spyfx');
+    try{ navigator.vibrate && navigator.vibrate([250, 100, 250, 100, 400]); }catch(e){}
+  }
+  if (AUD.manual.paused) playOnly('manual');
+  help.classList.add('open');
+};
+$('#closeHelp').onclick = closeHelp;
+help.addEventListener('click', e => { if (e.target === help) closeHelp(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+// Don't start game until logged in
+showGate();
+// original render etc will run after login via enterGame if needed
+// but keep for safety
+try{ history.scrollRestoration = 'manual'; }catch(e){}
+const toMain = () => window.scrollTo(0, $('#up').offsetHeight);
+addEventListener('load', () => { if(currentUser) toMain(); });
+</script>
+</body>
+</html>
