@@ -162,12 +162,11 @@ body:not(.has-user) #up { visibility:hidden; pointer-events:none; }
 <div id="authLogin" class="hidden">
   <div class="auth-box">
     <h1>ลงชื่อเข้าเล่น</h1>
-    <p>สมัครครั้งแรก หรือเข้าด้วยชื่อเดิม</p>
-    <input type="text" id="loginName" placeholder="ชื่อของคุณ" maxlength="20" autocomplete="username">
-    <input type="password" id="loginPass" placeholder="รหัสผ่านของคุณ" autocomplete="current-password">
+    <p>ใส่ชื่อที่ต้องการแสดง แล้วกดเข้าเล่นได้เลย</p>
+    <input type="text" id="loginName" placeholder="ชื่อของคุณ" maxlength="20" autocomplete="nickname">
     <div class="auth-error" id="loginErr"></div>
-    <button class="btn" id="loginBtn" type="button">เข้าเล่น / สมัคร</button>
-    <button class="btn alt" id="googleBtn" type="button">เข้าสู่ระบบด้วย Google</button>
+    <button class="btn" id="loginBtn" type="button">เข้าเล่น</button>
+    <button class="btn alt" id="googleBtn" type="button">เจ้าของเว็บไซต์: เข้าด้วย Google</button>
   </div>
 </div>
 
@@ -298,30 +297,56 @@ document.getElementById('gatePass').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('gateBtn').click();
 });
 
-// Firebase Authentication: ชื่อผู้ใช้ถูกแปลงเป็นอีเมลภายในเพื่อให้ใช้ชื่อ/รหัสผ่านได้
-function authEmail(name){ const key=btoa(unescape(encodeURIComponent(name.toLowerCase()))).replace(/[^a-zA-Z0-9]/g,''); return key+'@gangmoopping.com'; }
+// Firebase Authentication: สมาชิกใช้ชื่ออย่างเดียวผ่าน Anonymous Auth; เจ้าของใช้ Google Auth
 function safeName(name){ return name.replace(/[.#$\[\]\/]/g,'_').slice(0,20); }
 async function finishLogin(user,name){
+  if(!user || !db) throw new Error('Firebase ยังเชื่อมต่อฐานข้อมูลไม่ได้');
   const ref=db.ref('players/'+user.uid);
   const snap=await ref.once('value');
   let profile=snap.val();
-  if(!profile){ profile={name:name||user.displayName||'ผู้เล่น',created:Date.now(),state:{score:0,unlocked:false,ticket:null}}; await ref.set(profile); }
-  else if(name && profile.name!==name){ profile.name=name; await ref.child('name').set(name); }
-  enterGame({uid:user.uid,name:profile.name||name||'ผู้เล่น',role:profile.role||null,ticket:profile.ticket||null});
+  if(!profile){
+    profile={name:name||user.displayName||'ผู้เล่น',created:Date.now(),state:{score:0,unlocked:false,ticket:null}};
+    await ref.set(profile);
+  } else if(name && profile.name!==name){
+    await ref.child('name').set(name);
+    profile.name=name;
+  }
+  enterGame({uid:user.uid,name:profile.name||name||user.displayName||'ผู้เล่น',role:profile.role||null,ticket:profile.ticket||null});
   await loadCloudState();
 }
 document.getElementById('loginBtn').onclick=async()=>{
- const name=safeName(document.getElementById('loginName').value.trim()),pass=document.getElementById('loginPass').value,err=document.getElementById('loginErr');
- if(!name||name.length<2){err.textContent='ชื่อสั้นเกินไป';return;} if(!pass||pass.length<6){err.textContent='รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';return;}
- if(!auth||!db){err.textContent='Firebase ยังเชื่อมต่อไม่ได้';return;}
- const email=authEmail(name);
- try{ let credential; try{credential=await auth.signInWithEmailAndPassword(email,pass);}catch(e){ if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){credential=await auth.createUserWithEmailAndPassword(email,pass);}else throw e;} await finishLogin(credential.user,name); }catch(e){err.textContent=e.code==='auth/email-already-in-use'?'ชื่อนี้ถูกใช้แล้ว':e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?'ชื่อหรือรหัสผ่านไม่ถูกต้อง':'เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code);}
+  const name=safeName(document.getElementById('loginName').value.trim());
+  const err=document.getElementById('loginErr');
+  if(!name||name.length<2){err.textContent='กรุณาใส่ชื่ออย่างน้อย 2 ตัวอักษร';return;}
+  if(!auth||!db){err.textContent='Firebase ยังเชื่อมต่อไม่ได้';return;}
+  const btn=document.getElementById('loginBtn');btn.disabled=true;btn.textContent='กำลังเข้าเล่น...';err.textContent='';
+  try{
+    let user=auth.currentUser;
+    if(user && user.isAnonymous){ await finishLogin(user,name); }
+    else { const credential=await auth.signInAnonymously(); await finishLogin(credential.user,name); }
+  }catch(e){console.error('Anonymous login failed',e);err.textContent='เข้าเล่นไม่สำเร็จ: '+(e.message||e.code||'ตรวจสอบ Firebase Authentication และ Rules');}
+  finally{btn.disabled=false;btn.textContent='เข้าเล่น';}
 };
-document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+document.getElementById('loginName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
 let redirectedGoogleUser=null;
-document.getElementById('googleBtn').onclick=async()=>{const err=document.getElementById('loginErr');try{if(redirectedGoogleUser){await finishLogin(redirectedGoogleUser,redirectedGoogleUser.displayName);return;}const provider=new firebase.auth.GoogleAuthProvider();try{sessionStorage.setItem('gang_gate_passed','1');}catch(e){}await auth.signInWithRedirect(provider);}catch(e){err.textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');}};
-auth.getRedirectResult().then(async result=>{if(result.user){redirectedGoogleUser=result.user;try{if(sessionStorage.getItem('gang_gate_passed')==='1'){showLogin();await finishLogin(result.user,result.user.displayName);}}catch(e){showLogin();document.getElementById('loginErr').textContent='เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code||'ตรวจสอบ Firebase Rules');}}}).catch(e=>{console.error(e);showLogin();document.getElementById('loginErr').textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');});
-
+document.getElementById('googleBtn').onclick=async()=>{
+  const err=document.getElementById('loginErr');
+  try{
+    if(redirectedGoogleUser){await finishLogin(redirectedGoogleUser,redirectedGoogleUser.displayName);return;}
+    const provider=new firebase.auth.GoogleAuthProvider();
+    try{sessionStorage.setItem('gang_gate_passed','1');}catch(e){}
+    await auth.signInWithRedirect(provider);
+  }catch(e){console.error(e);err.textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');}
+};
+auth.getRedirectResult().then(async result=>{
+  if(result.user){
+    redirectedGoogleUser=result.user;
+    try{
+      const gatePassed=sessionStorage.getItem('gang_gate_passed')==='1';
+      if(gatePassed){showLogin();await finishLogin(result.user,result.user.displayName||'เจ้าของเว็บไซต์');}
+    }catch(e){console.error(e);showLogin();document.getElementById('loginErr').textContent='เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code||'ตรวจสอบ Firebase Rules');}
+  }
+}).catch(e=>{console.error(e);showLogin();document.getElementById('loginErr').textContent='Google Login ไม่สำเร็จ: '+(e.message||e.code||'');});
 
 // รีเซ็ตเฉพาะสถานะกิจกรรม ไม่ลบบัญชี Authentication หรือโปรไฟล์ผู้เล่น
 async function adminReset(){
